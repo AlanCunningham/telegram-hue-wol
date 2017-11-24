@@ -4,44 +4,49 @@ import ConfigParser
 from telegram.ext import Updater, CommandHandler
 
 
-class TelegramSam:
+config = ConfigParser.ConfigParser()
 
-    config = ConfigParser.ConfigParser()
 
-    def __init__(self):
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(name)s - %(funcName)s(): %(message)s')
-        self.config.read('config.txt')
+def init():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(name)s - %(funcName)s(): %(message)s')
+    config.read('config.txt')
+    start_updater()
 
-    def is_authorised_user(self, update):
-        auth_user_id = int(self.config.get('telegram', 'auth_user'))
+
+def check_authorised_user(func):
+    def auth_check(bot, update):
+        auth_user_id = int(config.get('telegram', 'auth_user'))
         current_user = update.message.from_user.id
         if auth_user_id == current_user:
-            return True
+            func(bot, update)
         else:
             logging.critical('Unauthorised user request: %s' % current_user)
             return False
+    return auth_check
 
-    # Bot commands
-    def start(self, bot, update):
-        if self.is_authorised_user(update):
-            update.message.reply_text('Hi Alan!')
 
-    def hello(self, bot, update):
-        update.message.reply_text(
-            'Hello {}'.format(update.message.from_user.first_name)
-        )
+# Bot commands
+@check_authorised_user
+def start(bot, update):
+    update.message.reply_text('Hi Alan!')
 
-    def start_updater(self):
-        token_api = self.config.get('telegram', 'api_token')
-        updater = Updater(token_api)
-        updater.dispatcher.add_handler(CommandHandler('start', self.start))
-        updater.dispatcher.add_handler(CommandHandler('hello', self.hello))
-        updater.start_polling()
-        updater.idle()
+
+def hello(bot, update):
+    update.message.reply_text(
+        'Hello {}'.format(update.message.from_user.first_name)
+    )
+
+
+def start_updater():
+    api_token = config.get('telegram', 'api_token')
+    updater = Updater(api_token)
+    updater.dispatcher.add_handler(CommandHandler('start', start))
+    updater.dispatcher.add_handler(CommandHandler('hello', hello))
+    updater.start_polling()
+    updater.idle()
 
 
 if __name__ == '__main__':
-    sam = TelegramSam()
-    sam.start_updater()
+    init()
