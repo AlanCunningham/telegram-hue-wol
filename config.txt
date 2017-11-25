@@ -1,3 +1,7 @@
 [telegram]
 api_token: your_telegram_api_token
 auth_user: your_telegram_user_id
+
+[computer]
+mac_address: your_computer_mac_address
+ip_address: your_computer_ip_address

@@ -2,7 +2,7 @@ import logging
 import ConfigParser
 
 from telegram.ext import Updater, CommandHandler
-
+from wakeonlan import wol
 
 config = ConfigParser.ConfigParser()
 
@@ -22,7 +22,14 @@ def check_authorised_user(func):
         if auth_user_id == current_user:
             func(bot, update)
         else:
-            logging.critical('Unauthorised user request: %s' % current_user)
+            bot.send_message(
+                chat_id=auth_user_id,
+                text='Unauthorised user request: %s %s | %s' %
+                (update.message.from_user.first_name,
+                    update.message.from_user.last_name,
+                    update.message.text
+                )
+            )
             return False
     return auth_check
 
@@ -39,11 +46,18 @@ def hello(bot, update):
     )
 
 
+@check_authorised_user
+def wake_computer(bot, update):
+    wol.send_magic_packet(config.get('computer', 'mac_address'))
+    update.message.reply_text('Sending wake on lan request')
+
+
 def start_updater():
     api_token = config.get('telegram', 'api_token')
     updater = Updater(api_token)
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CommandHandler('hello', hello))
+    updater.dispatcher.add_handler(CommandHandler('computer', wake_computer))
     updater.start_polling()
     updater.idle()
 
