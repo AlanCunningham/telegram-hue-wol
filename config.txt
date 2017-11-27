@@ -5,3 +5,7 @@ auth_user: your_telegram_user_id
 [computer]
 mac_address: your_computer_mac_address
 ip_address: your_computer_ip_address
+
+[hue]
+bridge_ip: your_hue_bridge_ip
+user_token: bridge_user_id
