@@ -47,7 +47,7 @@ def check_authorised_user(func):
             first_name = update.callback_query.from_user.first_name
             last_name = update.callback_query.from_user.last_name
             text = update.callback_query.data
-        except AttributeError, e:
+        except AttributeError:
             # Data from normal /commands
             current_user = update.message.from_user.id
             first_name = update.message.from_user.first_name
