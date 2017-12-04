@@ -7,7 +7,7 @@ config.read('config.txt')
 hue = Bridge(config.get('hue', 'bridge_ip'), config.get('hue', 'user_token'))
 
 
-def lights_on(update):
+def lights_on():
     if hue.lights[1]()['state']['on']:
         # Lights are already on
         return False
@@ -16,7 +16,7 @@ def lights_on(update):
         return True
 
 
-def lights_off(update):
+def lights_off():
     if not hue.lights[1]()['state']['on']:
         # Lights are already off
         return False

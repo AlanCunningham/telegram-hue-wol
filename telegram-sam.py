@@ -1,7 +1,8 @@
 import logging
 import configparser
 
-from telegram.ext import Updater, CommandHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 from wakeonlan import wol
 import qhue
 
@@ -43,8 +44,7 @@ def check_authorised_user(func):
                 text='Unauthorised user request: %s %s | %s' %
                 (update.message.from_user.first_name,
                     update.message.from_user.last_name,
-                    update.message.text
-                )
+                    update.message.text)
             )
             return False
     return auth_check
@@ -53,7 +53,33 @@ def check_authorised_user(func):
 # Bot commands
 @check_authorised_user
 def start(bot, update):
-    update.message.reply_text('Hi Alan!')
+    keyboard = [[
+        InlineKeyboardButton('Lights on', callback_data='lights_on'),
+        InlineKeyboardButton('Lights off', callback_data='lights_off')],
+        [InlineKeyboardButton('Computer', callback_data='computer')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Hi Alan', reply_markup=reply_markup)
+
+
+def callback_handler(bot, update):
+    query = update.callback_query
+
+    if query.data == 'lights_on':
+        lights_response = hue_lights.lights_on()
+        if lights_response:
+            bot.answerCallbackQuery(query.id, text='Turning lights on...')
+        else:
+            bot.answerCallbackQuery(query.id, text='Lights are already on')
+    elif query.data == 'lights_off':
+        lights_response = hue_lights.lights_off()
+        if lights_response:
+            bot.answerCallbackQuery(query.id, text='Turning lights off...')
+        else:
+            bot.answerCallbackQuery(query.id, text='Lights are already off')
+    elif query.data == 'computer':
+        wol.send_magic_packet(config.get('computer', 'mac_address'))
+        bot.answerCallbackQuery(query.id, text='Sending wake on LAN request')
 
 
 def hello(bot, update):
@@ -62,40 +88,12 @@ def hello(bot, update):
     )
 
 
-@check_authorised_user
-def wake_computer(bot, update):
-    wol.send_magic_packet(config.get('computer', 'mac_address'))
-    update.message.reply_text('Sending wake on lan request')
-
-
-@check_authorised_user
-def lights_on(bot, update):
-    lights_action = hue_lights.lights_on(update)
-    if lights_action:
-        response_message = 'Turning lights on...'
-    else:
-        response_message = 'Lights are already on'
-    send_message(bot, update, response_message)
-
-
-@check_authorised_user
-def lights_off(bot, update):
-    lights_action = hue_lights.lights_off(update)
-    if lights_action:
-        response_message = 'Turning lights off...'
-    else:
-        response_message = 'Lights are already off'
-    send_message(bot, update, response_message)
-
-
 def start_updater():
     api_token = config.get('telegram', 'api_token')
     updater = Updater(api_token)
-    updater.dispatcher.add_handler(CommandHandler('start', start))
+    updater.dispatcher.add_handler(CommandHandler('hey', start))
     updater.dispatcher.add_handler(CommandHandler('hello', hello))
-    updater.dispatcher.add_handler(CommandHandler('computer', wake_computer))
-    updater.dispatcher.add_handler(CommandHandler('lightson', lights_on))
-    updater.dispatcher.add_handler(CommandHandler('lightsoff', lights_off))
+    updater.dispatcher.add_handler(CallbackQueryHandler(callback_handler))
     updater.start_polling()
     updater.idle()
 
