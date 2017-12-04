@@ -33,19 +33,34 @@ def send_message(bot, update, text):
 
 
 def check_authorised_user(func):
+    """
+        Decorator to check whether a command is from an "authorised user"
+        The authorised user is checked against the telegram.auth_user config
+        in config.txt
+    """
     def auth_check(bot, update):
         auth_user_id = int(config.get('telegram', 'auth_user'))
-        current_user = update.message.from_user.id
+
+        try:
+            # Data from callback buttons
+            current_user = update.callback_query.message.chat_id
+            first_name = update.callback_query.from_user.first_name
+            last_name = update.callback_query.from_user.last_name
+            text = update.callback_query.data
+        except AttributeError, e:
+            # Data from normal /commands
+            current_user = update.message.from_user.id
+            first_name = update.message.from_user.first_name
+            last_name = update.message.from_user.last_name
+            text = update.message.text
+
         if auth_user_id == current_user:
             func(bot, update)
         else:
-            bot.send_message(
-                chat_id=auth_user_id,
-                text='Unauthorised user request: %s %s | %s' %
-                (update.message.from_user.first_name,
-                    update.message.from_user.last_name,
-                    update.message.text)
-            )
+            unauthorised_warning_message = \
+                'Unauthorised request:\nFrom: %s %s\nMessage: %s' \
+                % (first_name, last_name, text)
+            send_message(bot, update, unauthorised_warning_message)
             return False
     return auth_check
 
@@ -62,6 +77,7 @@ def start(bot, update):
     update.message.reply_text('Hi Alan', reply_markup=reply_markup)
 
 
+@check_authorised_user
 def callback_handler(bot, update):
     query = update.callback_query
 
