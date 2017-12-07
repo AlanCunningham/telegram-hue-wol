@@ -1,5 +1,6 @@
 import logging
 import configparser
+import os
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
@@ -68,10 +69,18 @@ def check_authorised_user(func):
 # Bot commands
 @check_authorised_user
 def start(bot, update):
-    keyboard = [[
-        InlineKeyboardButton('Lights on', callback_data='lights_on'),
-        InlineKeyboardButton('Lights off', callback_data='lights_off')],
-        [InlineKeyboardButton('Computer', callback_data='computer')]
+    keyboard = [
+        [
+            InlineKeyboardButton('Lights on', callback_data='lights_on'),
+            InlineKeyboardButton('Lights off', callback_data='lights_off')
+        ],
+        [
+            InlineKeyboardButton('Screen on', callback_data='screen_on'),
+            InlineKeyboardButton('Screen off', callback_data='screen_off')
+        ],
+        [
+            InlineKeyboardButton('Computer', callback_data='computer')
+        ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text('Hi Alan', reply_markup=reply_markup)
@@ -81,6 +90,7 @@ def start(bot, update):
 def callback_handler(bot, update):
     query = update.callback_query
 
+    # Hue lights
     if query.data == 'lights_on':
         lights_response = hue_lights.lights_on()
         if lights_response:
@@ -93,6 +103,16 @@ def callback_handler(bot, update):
             bot.answerCallbackQuery(query.id, text='Turning lights off...')
         else:
             bot.answerCallbackQuery(query.id, text='Lights are already off')
+
+    # Piframe screen on/off
+    elif query.data == 'screen_on':
+        os.system('echo %s | sudo tee /sys/class/backlight/*/bl_power' % 0)
+        bot.answerCallbackQuery(query.id, text='Turning screen on...')
+    elif query.data == 'screen_off':
+        os.system('echo %s | sudo tee /sys/class/backlight/*/bl_power' % 1)
+        bot.answerCallbackQuery(query.id, text='Turning screen off...')
+
+    # Wake on LAN
     elif query.data == 'computer':
         wol.send_magic_packet(config.get('computer', 'mac_address'))
         bot.answerCallbackQuery(query.id, text='Sending wake on LAN request')
