@@ -16,10 +16,10 @@ A simple [Telegram bot](https://github.com/python-telegram-bot/python-telegram-b
 api_token: your_telegram_api_token
 auth_user: your_telegram_user_id - Used to prevent other users from calling WakeOnLan/Philips Hue commands
 
-[computer]
-mac_address: your_computer_mac_address
-ip_address: your_computer_ip_address
+[computer]  
+mac_address: your_computer_mac_address  
+ip_address: your_computer_ip_address  
 
-[hue]
-bridge_ip: your_hue_bridge_ip
-user_token: bridge_user_id
+[hue]  
+bridge_ip: your_hue_bridge_ip  
+user_token: bridge_user_id  
