@@ -1,5 +1,4 @@
-# Telegram SAM
-
+# Telegram Bot - Philips Hue and Wake on LAN
 A simple [Telegram bot](https://github.com/python-telegram-bot/python-telegram-bot) that allows control to:
 - Philips Hue lights - on/off
 - Wake on LAN packets to turn your computer on remotely
